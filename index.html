@@ -1,73 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Lumencore Receiver</title>
+  <title>Lumencore Minimal Receiver</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+    body { font-family: Arial, sans-serif; padding: 10px; background: #121212; color: #e0e0e0; }
     h1 { color: #90caf9; }
-    video { width: 100%; max-height: 300px; margin-top: 10px; }
-    #output { background: #222; padding: 10px; margin-top: 20px; border-radius: 5px; }
+    #output { font-size: 1.4em; margin-top: 20px; background: #1e1e1e; padding: 10px; border-radius: 5px; }
+    video { width: 100%; max-height: 50vh; border: 2px solid #444; border-radius: 5px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Lumencore Light Receiver</h1>
-  <p>Point your camera at the blinking light source.</p>
+  <h1>Lumencore Minimal Receiver</h1>
+  <p>Point your camera at a blinking light source with long pauses (1s dot, 3s dash).</p>
   <video id="video" autoplay playsinline></video>
-  <div id="output">Message: <span id="decoded">(waiting...)</span></div>
-
-  <script>
+  <div id="output">Message: <span id="decoded">(waiting...)</span></div>  <script>
     const video = document.getElementById('video');
     const output = document.getElementById('decoded');
-    let decodedMessage = '', lastTime = Date.now(), lastBright = null;
 
-    async function startCam() {
+    let decodedMessage = "";
+    let lastTime = Date.now();
+    let lastBrightness = null;
+
+    async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = stream;
-      } catch (e) {
-        alert('Camera error: ' + e);
+      } catch (err) {
+        alert('Camera access denied or not available.');
       }
     }
 
     function getBrightness(frame) {
-      let sum = 0;
-      for (let i = 0; i < frame.data.length; i += 4)
-        sum += frame.data[i] + frame.data[i + 1] + frame.data[i + 2];
-      return sum / (frame.data.length / 4);
+      let total = 0;
+      for (let i = 0; i < frame.data.length; i += 4) {
+        total += frame.data[i] + frame.data[i + 1] + frame.data[i + 2];
+      }
+      return total / (frame.data.length / 4);
     }
 
-    function decodeSymbol(delta, time) {
-      if (delta < -40) return time < 200 ? '.' : '-';
-      if (delta > 40 && time > 500) return ' ';
+    function decodeSymbol(deltaTime, deltaBrightness) {
+      if (deltaBrightness < -50) {
+        if (deltaTime >= 3000) return '-';
+        if (deltaTime >= 1000) return '.';
+      }
       return '';
     }
 
-    function readFrame() {
+    function processFrame() {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const bright = getBrightness(frame);
-      const now = Date.now(), diff = now - lastTime;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = context.getImageData(0, 0, canvas.width, canvas.height);
 
-      if (lastBright !== null) {
-        const delta = bright - lastBright;
-        const symbol = decodeSymbol(delta, diff);
+      const brightness = getBrightness(frame);
+      const now = Date.now();
+      const deltaT = now - lastTime;
+
+      if (lastBrightness !== null) {
+        const deltaB = brightness - lastBrightness;
+        const symbol = decodeSymbol(deltaT, deltaB);
         if (symbol) {
           decodedMessage += symbol;
           output.textContent = decodedMessage;
         }
         lastTime = now;
       }
-
-      lastBright = bright;
-      requestAnimationFrame(readFrame);
+      lastBrightness = brightness;
+      requestAnimationFrame(processFrame);
     }
 
-    startCam().then(() => requestAnimationFrame(readFrame));
-  </script>
-</body>
+    startCamera().then(() => {
+      requestAnimationFrame(processFrame);
+    });
+  </script></body>
 </html>
