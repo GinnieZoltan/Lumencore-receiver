@@ -78,3 +78,4 @@ GINNIE FIRST
   </script>
 </body>
 </html>
+<title>Lumencore Mobile Receiver</title> <style> body { font-family: Arial, sans-serif; padding: 10px; background: #121212; color: #e0e0e0; } h1 { color: #90caf9; } #output { font-size: 1.2em; margin-top: 20px; background: #1e1e1e; padding: 10px; border-radius: 5px; } video { width: 100%; max-height: 50vh; border: 2px solid #444; border-radius: 5px; margin-top: 10px; } </style>
